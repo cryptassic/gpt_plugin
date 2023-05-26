@@ -1,73 +1,46 @@
 """This is a plugin to use Auto-GPT with AlpacaTrader."""
-from typing import Any, Dict, List, Optional, Tuple, TypeVar, TypedDict
-from auto_gpt_plugin_template import AutoGPTPluginTemplate
+from typing import Any, Dict, List, Optional, Tuple, TypedDict, TypeVar
 
-import pandas as pd
-import numpy as np
-import requests
-from .trader import Trader
+from abstract_singleton import AbstractSingleton, Singleton
+
+from .dex import DEX
 
 PromptGenerator = TypeVar("PromptGenerator")
+
 
 class Message(TypedDict):
     role: str
     content: str
 
 
-class AutoGPTAlpacaTraderPlugin(AutoGPTPluginTemplate):
+class AutoGPTDexScreenerPlugin(AbstractSingleton, metaclass=Singleton):
     """
-    This is a plugin to use Auto-GPT with AlpacaTrader.
+    This is a plugin to use Auto-GPT with DEX Screener.
     """
 
     def __init__(self):
         super().__init__()
-        self._name = "Auto-GPT-AlpacaTrader"
+        self._name = "Auto-GPT-DEXScreener"
         self._version = "0.1.0"
-        self._description = "This is a plugin for Auto-GPT-AlpacaTrader."
-        self.cli= Trader()
-        
+        self._description = "This is a plugin for Auto-GPT-Dexscreener."
+        self.dex = DEX()
 
     def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
         prompt.add_command(
-            "Close All Trades",
-            "close_all_trades",
-            {},
-            self.cli.close_all_trades
+            "Get Token Symbols", "get_token_symbols", {}, self.dex.get_token_symbols
         ),
         prompt.add_command(
-            "Get Account Information",
-            "get_account_information",
-            {},
-            self.cli.get_account_information
-        ),
-        prompt.add_command(
-            "Get Allowed Stocks",
-            "get_allowed_stocks",
-            {},
-            self.cli.get_allowed_stocks
-        ),
-        prompt.add_command(
-            "Get Positions",
-            "get_positions",
-            {},
-            self.cli.get_positions
-        ),
-        prompt.add_command(
-            "Place Trade",
-            "place_trade",
-            {
-                "symbol": "<symbol>",
-                "quantity": "<quantity>",
-                "side" :"<side>" ,
-                "order_type":"<order_type>",
-                "time_in_force":"<time_in_force>"
-            },
-            self.cli.place_trade
+            "Get Token Data",
+            "get_token_data",
+            {"symbol": "<symbol>"},
+            self.dex.get_token_data,
         )
-        return prompt
-# ______________________________________________________________________________________________________________________
 
-# ______________________________________________________________________________________________________________________
+        return prompt
+
+    # ______________________________________________________________________________________________________________________
+
+    # ______________________________________________________________________________________________________________________
     def handle_chat_completion(
         self, messages: List[Message], model: str, temperature: float, max_tokens: int
     ) -> str:
@@ -81,7 +54,7 @@ class AutoGPTAlpacaTraderPlugin(AutoGPTPluginTemplate):
             str: The resulting response.
         """
         pass
-    
+
     def can_handle_post_prompt(self) -> bool:
         """This method is called to check that the plugin can
         handle the post_prompt method.
@@ -230,4 +203,3 @@ class AutoGPTAlpacaTraderPlugin(AutoGPTPluginTemplate):
           Returns:
               bool: True if the plugin can handle the chat_completion method."""
         return False
-
